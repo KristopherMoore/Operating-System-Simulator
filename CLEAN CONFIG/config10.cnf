@@ -1,0 +1,12 @@
+Start Simulator Configuration File:
+Version/Phase: 1.05
+File Path: testfile2.mdf
+CPU Scheduling Code: SJF-N
+Quantum Time (cycles): 55
+Memory Available (KB): 999
+Processor Cycle Time (msec): 10
+I/O Cycle Time (msec): 20
+Log To: Other
+Log File Path: logfile_1.lgf
+End Simulator Configuration File.
+

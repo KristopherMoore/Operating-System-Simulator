@@ -1,0 +1,12 @@
+Start Simulator Configuration File:
+Version/Phase: 1.05
+CPU Scheduling Code: FCFS-N
+Quantum Time (cycles): 45
+Memory Available (KB): 999
+Processor Cycle Time (msec): 9
+File Path: testfile3.mdf
+I/O Cycle Time (msec): 10220
+Log To: File
+Log File Path: logfile_2.lgf     
+End Simulator Configuration File.
+

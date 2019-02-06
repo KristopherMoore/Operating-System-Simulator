@@ -1,0 +1,12 @@
+Start Simulator Configuration File:
+Version/Phase: 1.05
+CPU Scheduling Code:     RR-P     
+Quantum Time (cycles): 25
+Processor Cycle Time (msec): 7
+File Path: metadata4.mdf
+I/O Cycle Time (msec): 26
+Log To: Monitor
+Log File Path: logfile_4.lgf
+Memory Available (KB): 555
+End Simulator Configuration File.
+
