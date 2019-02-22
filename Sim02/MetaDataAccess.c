@@ -444,7 +444,7 @@ Boolean isDigit( char testChar )
 Function name: displayMetaData
 Algorithm: iterates through op code linked list,
            displays op code data individually
-Precondtion: linked list, with or without data
+Precondition: linked list, with or without data
              (should not be called if no data)
 Postcondition: displays all op codes in list
 Exceptions: none

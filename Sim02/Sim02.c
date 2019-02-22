@@ -25,7 +25,7 @@ int main( int argc, char **argv )
 {
 
    // initialization
-   int configAccessResult, mdAccessResult, simulatorRunResult;
+   int configAccessResult, mdAccessResult;
    char configFileName[ MAX_STR_LEN ];
    char mdFileName[ MAX_STR_LEN ];
    ConfigDataType *configDataPtr;
@@ -78,16 +78,10 @@ int main( int argc, char **argv )
    }
    
    //If we reach this point, we have our correct files, so we can begin sim
-   simulatorRunResult = simulationRunner( configDataPtr, mdData);
+   simulationRunner( configDataPtr, mdData);
    
-   if( simulatorRunResult != NO_ERR )
-   {
-      //display the error message, FOR NOW PLACEHOLDER
-      printf("\n\n PLACEHOLDER ERROR FOR SIM RUNNER RESULT \n\n");
-   }
    
    // shut down, clean up program
-
    // clear configuration data
    clearConfigData( &configDataPtr );
    printf( "\n" );

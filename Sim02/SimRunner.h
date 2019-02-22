@@ -1,4 +1,4 @@
-//Header File Information//////////////////////////////////////////////////////////////////////////////
+//Header File Information//////////////////////////////////////////////////////
 /*
  * @file SimRunner.h
  *
@@ -80,14 +80,14 @@ int simulationRunner( ConfigDataType* configDataPtr, OpCodeType* mdData );
 int cpuScheduler( PCB* pcbArray, int processCount );
 void operationRunner(int scheduledProcess, OpCodeType* programCounter, 
                                  ConfigDataType* configDataPtr, 
-                                                PCB* pcbArray,
-                                                    LogLinkedList* listCurrentPtr);
+                                             PCB* pcbArray,
+                                                LogLinkedList* listCurrentPtr);
 void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
-                                                    LogLinkedList* listCurrentPtr);
+                                                LogLinkedList* listCurrentPtr);
 EventData generateEventData(EventType eventType, LogCode logCode, 
                   char* timeString, OpCodeType* programCounter, PCB* process);
 void *threadRunTimer(void* ptr);
-void logToFile(LogLinkedList* listCurrentPtr);
+void logToFile(LogLinkedList* listCurrentPtr, ConfigDataType* configDataPtr );
 LogLinkedList* addNodeLL( LogLinkedList* localPtr, LogLinkedList* newNode );
 LogLinkedList* clearLinkedList( LogLinkedList* localPtr );
 

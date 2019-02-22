@@ -15,7 +15,18 @@
 #include "SimRunner.h"
 #include "simtimer.h"
 #include "StringUtils.h"
- 
+
+/*
+Function name: simulationRunner
+Algorithm: utilizes metadata and config data to create processes with PCBs,
+            then uses a scheduler to select a process, and iterates through them
+            using timer functions to emulate a running. Pthreads are used for
+            I/O ops.
+Precondition: correctly configured config.cnf and metadata.mdf files
+Postcondition: simulates in accordance with specifications of config file
+Exceptions: none
+Notes: none
+*/
 int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
 {
    //initializations
@@ -40,26 +51,16 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    //buffer in a value for completeLog, to avoid unintialized access
    copyString( completeLog, " " );
    
+   //IMPORTANT: initialization steps for our Logging linked list,
+   newNodePtr = ( LogLinkedList * ) malloc( sizeof( LogLinkedList ) );
+   copyString(newNodePtr->logLine, " ");
+                              
+   listCurrentPtr = addNodeLL( listCurrentPtr, newNodePtr );
+   listHeadPtr = listCurrentPtr;
+                              
+   copyString(listCurrentPtr->logLine, " ");
+   concatenateString(listCurrentPtr->logLine, "");
    
-                              //TESTING CODE:////////////////////////////////////////////////////
-                              newNodePtr = ( LogLinkedList * ) malloc( sizeof( LogLinkedList ) );
-                              copyString(newNodePtr->logLine, " ");
-                              
-                              listCurrentPtr = addNodeLL( listCurrentPtr, newNodePtr );
-                              listHeadPtr = listCurrentPtr;
-                              
-                              //addNodeLL( listCurrentPtr, newNodePtr );
-                              
-                              //while( listCurrentPtr != NULL )
-                              //{
-                                 copyString(listCurrentPtr->logLine, " ");
-                                 concatenateString(listCurrentPtr->logLine, "KRISSSSSSSSS");
-                                 printf("\n\t\t%s\n", listCurrentPtr->logLine );
-                                 //listCurrentPtr = listCurrentPtr->next;
-                              //}
-                               //frees moved to bot of this function
-                              
-                              ///////////////////////////////////////////////////////////////////
    
    //Start Event Logging
    printf( "==========================\n" );
@@ -271,24 +272,26 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    if( compareString( checkIfFile, "Both" ) == STR_EQ  
             || compareString( checkIfFile, "File" ) == STR_EQ)
    {
-      logToFile(listCurrentPtr);
+      logToFile(listHeadPtr, configDataPtr);
    }
    
-   //TESTING PRINT://////////////////////////////////////////
-   listCurrentPtr = listHeadPtr;
-   while( listCurrentPtr != NULL )
-   {
-      printf("\n..%s.. INDEX: %d\n", listCurrentPtr->logLine, indexI++);
-      listCurrentPtr = listCurrentPtr->next;
-   }
-   
-   //clear out our logLinkedList
+   //clear out our logLinkedList, and free temporary memory for newNodePtr
    listHeadPtr = clearLinkedList( listHeadPtr );
    free( newNodePtr );
    
    return 0;
 }
 
+/*
+Function name: cpuScheduler
+Algorithm: in this version, initial configuration for FCFS-N only
+            the scheduler takes in a list of arrays, and selects the next
+            process to be run, based on its scheduling strategy
+Precondition: filled pcbArray, and a count of the processes
+Postcondition: returns the pId of the next process to be run
+Exceptions: none
+Notes: none
+*/
 int cpuScheduler(PCB* pcbArray, int processCount )
 {
    int scheduledPid = -1;
@@ -312,6 +315,17 @@ int cpuScheduler(PCB* pcbArray, int processCount )
 
 
 
+/*
+Function name: operationRunner
+Algorithm: utilizes process information to "perform" the operations of a process
+            uniquely operates based on operation type. Sends off to the
+            eventLogger at each step.
+Precondition: schedulePid, and process information, linked list for sending to
+               logger
+Postcondition: returns when operation has been completed
+Exceptions: none
+Notes: none
+*/
 void operationRunner(int scheduledProcess,OpCodeType* programCounter,
                                           ConfigDataType* configDataPtr, 
                                                 PCB* pcbArray,
@@ -390,6 +404,17 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
    }
 }
 
+
+/*
+Function name: eventLogger
+Algorithm: using eventData, and configurationPtr. This function creates the
+            necessary strings for monitor and file output. Then stores each
+            event in a linkedList for final file process by the logToFile method
+Precondition: eventData, configData, and a LogLinkedList to append to
+Postcondition: returns when its logging has completed
+Exceptions: none
+Notes: none
+*/
 void eventLogger(EventData eventData, ConfigDataType* configDataPtr, 
                                                   LogLinkedList* listCurrentPtr)
 {
@@ -492,49 +517,48 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
    concatenateString( finalLogStr, logCodeStr );
    concatenateString( finalLogStr, logCodeExtend );
    
+   //NOW, we need to add the string to our linkedList.
+   //allocate space, and ensure we intialize it
+   newNodePtr = ( LogLinkedList * ) malloc( sizeof( LogLinkedList ) );
+   copyString(newNodePtr->logLine, " ");
+     
+   //add node and adjust ptr
+   listCurrentPtr = addNodeLL( listCurrentPtr, newNodePtr );
+   listCurrentPtr = listCurrentPtr->next;
+      
+   //Get last node position, so we can set it
+   while( listCurrentPtr != NULL )
+   {
+      oldNodePtr = listCurrentPtr;
+      listCurrentPtr = listCurrentPtr->next;
+   }
+   //set our log string to our linked list
+   copyString(oldNodePtr->logLine, " ");
+   concatenateString(oldNodePtr->logLine, finalLogStr);
+                        
+   free( newNodePtr );
+   
+   
    //convert our code into a string, then check how we should be eventLogging
    configCodeToString( configDataPtr->logToCode, monitorString );
-   if( compareString( monitorString, "Both" ) == STR_EQ  )
-   {
-      printf( "%s", finalLogStr );
-      
-      //allocate space, and ensure we intialize it
-      newNodePtr = ( LogLinkedList * ) malloc( sizeof( LogLinkedList ) );
-      copyString(newNodePtr->logLine, " ");
-     
-     
-      listCurrentPtr = addNodeLL( listCurrentPtr, newNodePtr );
-      
-      listCurrentPtr = listCurrentPtr->next;
-      
-      //copyString(listCurrentPtr->logLine, " ");
-      //concatenateString(listCurrentPtr->logLine, finalLogStr);
-      
-      //Get last node position, so we can set it
-      while( listCurrentPtr != NULL )
-      {
-         printf("\n..%s.. ;;;;;;;;\n", listCurrentPtr->logLine);
-         oldNodePtr = listCurrentPtr;
-         listCurrentPtr = listCurrentPtr->next;
-      
-      }
-      copyString(oldNodePtr->logLine, " ");
-      concatenateString(oldNodePtr->logLine, finalLogStr);
-                        
-      free( newNodePtr );
-      
-   }
-   else if( compareString( monitorString, "File" ) == STR_EQ  )
-   {
-      //concatenateString( completeLog, finalLogStr );
-   }
-   else if( compareString( monitorString, "Monitor" ) == STR_EQ  )
-   {
-      printf("%s", finalLogStr);
-   }
    
+   //check if we need to print to screen, and do it.
+   if( compareString( monitorString, "Both" ) == STR_EQ
+            ||compareString( monitorString, "Monitor" ) == STR_EQ )
+   {
+      printf( "%s", finalLogStr ); 
+   }
 }
 
+/*
+Function name: generateEventData
+Algorithm: using event information, generates the necessary struct info of 
+            the eventData type. checks for vaild pointers before initialization
+Precondition: eventInformation from calling method
+Postcondition: returns a eventData struct for parsing in the EventLogger
+Exceptions: none
+Notes: none
+*/
 EventData generateEventData( EventType eventType, LogCode logCode, 
                   char* timeString, OpCodeType* programCounter, PCB* process )
 {
@@ -567,6 +591,14 @@ EventData generateEventData( EventType eventType, LogCode logCode,
    return eventData;
 }
 
+/*
+Function name: threadRunTimer
+Algorithm: allows operationRunner to send I/O on POSIX threads
+Precondition: valid pthread create call
+Postcondition: returns NULL to meet pthread_create contract
+Exceptions: none
+Notes: none
+*/
 void* threadRunTimer( void* ptr )
 {
    //ensure we grab our sent integer pointer.
@@ -578,22 +610,55 @@ void* threadRunTimer( void* ptr )
    return NULL;
 }
 
-void logToFile( LogLinkedList* listCurrentPtr )
+
+/*
+Function name: logToFile
+Algorithm: given the LogLinkedList, and the configuration data, logs simulator
+            events into a .lgf file
+Precondition: filled LogLinkedList and configuration data
+Postcondition: writes to a SimulatorLogFile.lgf
+Exceptions: none
+Notes: none
+*/
+void logToFile( LogLinkedList* listHeadPtr , ConfigDataType* configDataPtr )
 {
-   char saveString[MAX_STR_LEN];
-   //copyString( saveString, " " );
-   //concatenateString( saveString , "======================================\n" );
-   //concatenateString( saveString , "Simulator Log File Header\n" );
-   
-   //printf("\n\nSAVESTR:%s \n\nCOMPLOG:%s\n\n", saveString, completeLog);
-   
-   //concatenateString( saveString, completeLog );
-   
    FILE* filePtr = fopen( "SimulatorLogFile.lgf", "w" );
-   //fprintf( filePtr, "%s", completeLog );
+   
+   //write header
+   fprintf( filePtr, "======================================\n" );
+   fprintf( filePtr, "Simulator Log File Header\n\n" );
+   
+   //write config data
+   fprintf( filePtr, "File Name\t\t\t: %s\n", 
+                                       configDataPtr->metaDataFileName );
+   fprintf( filePtr, "CPU Scheduling\t\t\t: %d\n", 
+                                       configDataPtr->cpuSchedCode );
+   fprintf( filePtr, "Quantum Cycles\t\t\t: %d\n", 
+                                       configDataPtr->quantumCycles );
+   fprintf( filePtr, "Memory Available (KB)\t\t: %d\n", 
+                                       configDataPtr->memAvailable );
+   fprintf( filePtr, "Processor Cycle Rate (ms/cycle)\t: %d\n", 
+                                       configDataPtr->procCycleRate );
+   fprintf( filePtr, "I/O Cycle Rate (ms/cycle)\t: %d\n\n", 
+                                       configDataPtr->ioCycleRate );
+   
+   //write from each of the nodes of the logging linkedlist
+   while( listHeadPtr != NULL )
+   {
+      fprintf( filePtr, "%s", listHeadPtr->logLine );
+      listHeadPtr = listHeadPtr->next;
+   }
    fclose( filePtr );
 }
 
+/*
+Function name: addNodeLL
+Algorithm: responsible for allocation of space for new node in LogLinkedList
+Precondition: ptr to list, and a new node
+Postcondition: last node in list
+Exceptions: none
+Notes: none
+*/
 LogLinkedList* addNodeLL( LogLinkedList* localPtr, LogLinkedList* newNode )
 {
    // check for local pointer assigned to null
@@ -619,6 +684,14 @@ LogLinkedList* addNodeLL( LogLinkedList* localPtr, LogLinkedList* newNode )
    return localPtr;
 }
 
+/*
+Function name: clearLinkedList
+Algorithm: responsible freeing all memory allocated by log linked list
+Precondition: ptr to the head of list
+Postcondition: returns null after all memory has been freed
+Exceptions: none
+Notes: none
+*/
 LogLinkedList* clearLinkedList( LogLinkedList* localPtr )
 {
    // check for local pointer not set to null (list not empty)
