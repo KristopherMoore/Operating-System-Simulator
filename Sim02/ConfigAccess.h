@@ -40,7 +40,7 @@ typedef enum { CPU_SCHED_SJF_N_CODE,
 // config data structure
 typedef struct
 {
-    double version;
+   double version;
 	char metaDataFileName[ 100 ];
 	int cpuSchedCode;
 	int quantumCycles;

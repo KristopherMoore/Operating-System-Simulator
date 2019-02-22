@@ -21,6 +21,9 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    //initializations
    char timeString[MAX_STR_LEN];
    char completeLog[MAX_STR_LEN];
+   LogLinkedList* newNodePtr;
+   LogLinkedList* listHeadPtr = NULL;
+   LogLinkedList* listCurrentPtr = NULL;
    char checkIfFile[STD_STR_LEN];
    OpCodeType* loopMetaDataPtr;
    OpCodeType* currentProgramCounter;
@@ -38,6 +41,26 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    copyString( completeLog, " " );
    
    
+                              //TESTING CODE:////////////////////////////////////////////////////
+                              newNodePtr = ( LogLinkedList * ) malloc( sizeof( LogLinkedList ) );
+                              copyString(newNodePtr->logLine, " ");
+                              
+                              listCurrentPtr = addNodeLL( listCurrentPtr, newNodePtr );
+                              listHeadPtr = listCurrentPtr;
+                              
+                              //addNodeLL( listCurrentPtr, newNodePtr );
+                              
+                              //while( listCurrentPtr != NULL )
+                              //{
+                                 copyString(listCurrentPtr->logLine, " ");
+                                 concatenateString(listCurrentPtr->logLine, "KRISSSSSSSSS");
+                                 printf("\n\t\t%s\n", listCurrentPtr->logLine );
+                                 //listCurrentPtr = listCurrentPtr->next;
+                              //}
+                               //frees moved to bot of this function
+                              
+                              ///////////////////////////////////////////////////////////////////
+   
    //Start Event Logging
    printf( "==========================\n" );
    printf("Begin Simulation\n\n");
@@ -46,13 +69,13 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    //EVENT LOG: System Start
    accessTimer(ZERO_TIMER, timeString);
    eventData = generateEventData(OS, SystemStart, timeString, mdData, process);
-   eventLogger(eventData, configDataPtr, completeLog);
+   eventLogger(eventData, configDataPtr, listCurrentPtr);
    
    
    //EVENT LOG: Create PCB'S
    accessTimer(LAP_TIMER, timeString);
    eventData = generateEventData(OS, CreatePCBs, timeString, mdData, process);
-   eventLogger(eventData, configDataPtr, completeLog);
+   eventLogger(eventData, configDataPtr, listCurrentPtr);
    
    
    //Create our PCB's, start by counting how many we need(processes in MetaData)
@@ -76,7 +99,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    //EVENT LOG: All Processes init in NEW
    accessTimer(LAP_TIMER, timeString);
    eventData = generateEventData(OS, AllProcNEW, timeString, mdData, process);
-   eventLogger(eventData, configDataPtr, completeLog);
+   eventLogger(eventData, configDataPtr, listCurrentPtr);
    
    
    
@@ -112,7 +135,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    eventData = generateEventData(OS, AllProcREADY, timeString,
                                     pcbArray[scheduledProcess].programCounter, 
                                                 &pcbArray[scheduledProcess]);
-   eventLogger(eventData, configDataPtr, completeLog);
+   eventLogger(eventData, configDataPtr, listCurrentPtr);
    
    
    //Initialize in READY state
@@ -175,7 +198,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
          eventData = generateEventData(OS, ProcSelected, timeString,
                                     pcbArray[scheduledProcess].programCounter, 
                                                 &pcbArray[scheduledProcess]);
-         eventLogger(eventData, configDataPtr, completeLog);
+         eventLogger(eventData, configDataPtr, listCurrentPtr);
       }
       
       //Set Process in RUNNING // check if already RUNNING, if so ignore.
@@ -188,7 +211,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
          eventData = generateEventData(OS, ProcSetIn, timeString,
                                     pcbArray[scheduledProcess].programCounter, 
                                                 &pcbArray[scheduledProcess]);
-         eventLogger(eventData, configDataPtr, completeLog);
+         eventLogger(eventData, configDataPtr, listCurrentPtr);
       }
       
       //grab our PC, and send to Operation runner to handle run types
@@ -196,7 +219,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       currentProgramCounter = pcbArray[scheduledProcess].programCounter;
       operationRunner( scheduledProcess, currentProgramCounter, configDataPtr,
                                                             pcbArray, 
-                                                                 &completeLog[0] );
+                                                               listCurrentPtr );
       
       //CHECK FOR FINISH, since we started our program Counter with an offset 
          //from start, this will only ever be A(end)0;
@@ -209,7 +232,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
          eventData = generateEventData(OS, ProcEnd, timeString,
                                     pcbArray[scheduledProcess].programCounter, 
                                                 &pcbArray[scheduledProcess]);
-         eventLogger(eventData, configDataPtr, completeLog);
+         eventLogger(eventData, configDataPtr, listCurrentPtr);
       }
       
       //After each Process is checked, move the program counter, as long as the 
@@ -236,7 +259,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    accessTimer(LAP_TIMER, timeString);
    eventData = generateEventData(OS, SystemStop, timeString,
       pcbArray[scheduledProcess].programCounter, &pcbArray[scheduledProcess]);
-   eventLogger(eventData, configDataPtr, completeLog);
+   eventLogger(eventData, configDataPtr, listCurrentPtr);
    
    
    //EXIT with normal operation
@@ -248,8 +271,20 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    if( compareString( checkIfFile, "Both" ) == STR_EQ  
             || compareString( checkIfFile, "File" ) == STR_EQ)
    {
-      logToFile(completeLog);
+      logToFile(listCurrentPtr);
    }
+   
+   //TESTING PRINT://////////////////////////////////////////
+   listCurrentPtr = listHeadPtr;
+   while( listCurrentPtr != NULL )
+   {
+      printf("\n..%s.. INDEX: %d\n", listCurrentPtr->logLine, indexI++);
+      listCurrentPtr = listCurrentPtr->next;
+   }
+   
+   //clear out our logLinkedList
+   listHeadPtr = clearLinkedList( listHeadPtr );
+   free( newNodePtr );
    
    return 0;
 }
@@ -275,10 +310,12 @@ int cpuScheduler(PCB* pcbArray, int processCount )
    return scheduledPid;
 }
 
+
+
 void operationRunner(int scheduledProcess,OpCodeType* programCounter,
-                                             ConfigDataType* configDataPtr, 
-                                                      PCB* pcbArray,
-                                                            char* completeLog)
+                                          ConfigDataType* configDataPtr, 
+                                                PCB* pcbArray,
+                                                  LogLinkedList* listCurrentPtr)
 {
    //initializations
    char timeString[MAX_STR_LEN];
@@ -295,7 +332,7 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
       accessTimer(LAP_TIMER, timeString);
       eventData = generateEventData(Process, ProcOpStart, timeString,
                                  programCounter, &pcbArray[scheduledProcess]);
-      eventLogger(eventData, configDataPtr, completeLog);
+      eventLogger(eventData, configDataPtr, listCurrentPtr);
       
       //Wait out our time
       timeToWaitMs = programCounter->opValue * configDataPtr->procCycleRate;
@@ -305,7 +342,7 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
       accessTimer(LAP_TIMER, timeString);
       eventData = generateEventData(Process, ProcOpEnd, timeString,
                                  programCounter, &pcbArray[scheduledProcess]);
-      eventLogger(eventData, configDataPtr, completeLog);
+      eventLogger(eventData, configDataPtr, listCurrentPtr);
    }
    
    //MEMORY OPERATIONS
@@ -315,7 +352,7 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
       accessTimer(LAP_TIMER, timeString);
       eventData = generateEventData(Process, ProcOpStart, timeString,
                                  programCounter, &pcbArray[scheduledProcess]);
-      eventLogger(eventData, configDataPtr, completeLog);
+      eventLogger(eventData, configDataPtr, listCurrentPtr);
          
       //Wait out our time
       timeToWaitMs = programCounter->opValue * configDataPtr->procCycleRate;
@@ -325,7 +362,7 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
       accessTimer(LAP_TIMER, timeString);
       eventData = generateEventData(Process, ProcOpEnd, timeString,
                                  programCounter, &pcbArray[scheduledProcess]);
-      eventLogger(eventData, configDataPtr, completeLog);
+      eventLogger(eventData, configDataPtr, listCurrentPtr);
    }
       
    //I/O OPERATIONS
@@ -336,7 +373,7 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
       accessTimer(LAP_TIMER, timeString);
       eventData = generateEventData(Process, ProcOpStart, timeString,
                                  programCounter, &pcbArray[scheduledProcess]);
-      eventLogger(eventData, configDataPtr, completeLog);
+      eventLogger(eventData, configDataPtr, listCurrentPtr);
          
       //Wait out our time, utilizing pthreads
       timeToWaitMs = programCounter->opValue * configDataPtr->ioCycleRate;
@@ -349,14 +386,16 @@ void operationRunner(int scheduledProcess,OpCodeType* programCounter,
       accessTimer(LAP_TIMER, timeString);
       eventData = generateEventData(Process, ProcOpEnd, timeString,
                                  programCounter, &pcbArray[scheduledProcess]);
-      eventLogger(eventData, configDataPtr, completeLog);
+      eventLogger(eventData, configDataPtr, listCurrentPtr);
    }
 }
 
 void eventLogger(EventData eventData, ConfigDataType* configDataPtr, 
-                                                            char* completeLog)
+                                                  LogLinkedList* listCurrentPtr)
 {
    //declare strings holders
+   LogLinkedList* newNodePtr = NULL;
+   LogLinkedList* oldNodePtr = NULL;
    char finalLogStr[MAX_STR_LEN];
    char eventStr[MAX_STR_LEN];
    char logCodeStr[MAX_STR_LEN];
@@ -458,12 +497,36 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
    if( compareString( monitorString, "Both" ) == STR_EQ  )
    {
       printf( "%s", finalLogStr );
-      concatenateString( completeLog, finalLogStr );
-      printf("TEST COMPLETE LOG: %s" , completeLog);
+      
+      //allocate space, and ensure we intialize it
+      newNodePtr = ( LogLinkedList * ) malloc( sizeof( LogLinkedList ) );
+      copyString(newNodePtr->logLine, " ");
+     
+     
+      listCurrentPtr = addNodeLL( listCurrentPtr, newNodePtr );
+      
+      listCurrentPtr = listCurrentPtr->next;
+      
+      //copyString(listCurrentPtr->logLine, " ");
+      //concatenateString(listCurrentPtr->logLine, finalLogStr);
+      
+      //Get last node position, so we can set it
+      while( listCurrentPtr != NULL )
+      {
+         printf("\n..%s.. ;;;;;;;;\n", listCurrentPtr->logLine);
+         oldNodePtr = listCurrentPtr;
+         listCurrentPtr = listCurrentPtr->next;
+      
+      }
+      copyString(oldNodePtr->logLine, " ");
+      concatenateString(oldNodePtr->logLine, finalLogStr);
+                        
+      free( newNodePtr );
+      
    }
    else if( compareString( monitorString, "File" ) == STR_EQ  )
    {
-      concatenateString( completeLog, finalLogStr );
+      //concatenateString( completeLog, finalLogStr );
    }
    else if( compareString( monitorString, "Monitor" ) == STR_EQ  )
    {
@@ -515,11 +578,64 @@ void* threadRunTimer( void* ptr )
    return NULL;
 }
 
-void logToFile( char* completeLog )
+void logToFile( LogLinkedList* listCurrentPtr )
 {
+   char saveString[MAX_STR_LEN];
+   //copyString( saveString, " " );
+   //concatenateString( saveString , "======================================\n" );
+   //concatenateString( saveString , "Simulator Log File Header\n" );
+   
+   //printf("\n\nSAVESTR:%s \n\nCOMPLOG:%s\n\n", saveString, completeLog);
+   
+   //concatenateString( saveString, completeLog );
+   
    FILE* filePtr = fopen( "SimulatorLogFile.lgf", "w" );
-   fprintf( filePtr, "%s", completeLog );
+   //fprintf( filePtr, "%s", completeLog );
    fclose( filePtr );
+}
+
+LogLinkedList* addNodeLL( LogLinkedList* localPtr, LogLinkedList* newNode )
+{
+   // check for local pointer assigned to null
+   if( localPtr == NULL )
+   {
+      // access memory for new link/node
+      localPtr = ( LogLinkedList* ) malloc( sizeof( LogLinkedList ) );
+
+      // assign string value to the logLine
+      // assign next pointer to null
+      copyString( localPtr->logLine, newNode->logLine );
+      localPtr->next = NULL;
+
+      // return current local pointer
+      return localPtr;
+   }
+
+   // assume end of list not found yet
+   // assign recursive function to current's next link
+   localPtr->next = addNodeLL( localPtr->next, newNode );
+
+   // return current local pointer
+   return localPtr;
+}
+
+LogLinkedList* clearLinkedList( LogLinkedList* localPtr )
+{
+   // check for local pointer not set to null (list not empty)
+   if( localPtr != NULL )
+   {
+      // check for local pointer's next node not null
+      if( localPtr->next != NULL )
+      {
+         // call recursive function with next pointer
+         clearLinkedList( localPtr->next );
+      }
+
+      // after recursive call, release memory to OS
+      free( localPtr );
+   }
+   
+   return NULL; 
 }
 
 

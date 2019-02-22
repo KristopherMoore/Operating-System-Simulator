@@ -68,19 +68,28 @@ typedef struct
    
 } PCB;
 
+typedef struct LogLinkedList
+{
+   char logLine[80];
+   struct LogLinkedList* next;
+   
+} LogLinkedList;
+
 //function prototypes
 int simulationRunner( ConfigDataType* configDataPtr, OpCodeType* mdData );
 int cpuScheduler( PCB* pcbArray, int processCount );
 void operationRunner(int scheduledProcess, OpCodeType* programCounter, 
                                  ConfigDataType* configDataPtr, 
-                                                      PCB* pcbArray,
-                                                            char* completeLog);
+                                                PCB* pcbArray,
+                                                    LogLinkedList* listCurrentPtr);
 void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
-                                                            char* completeLog);
+                                                    LogLinkedList* listCurrentPtr);
 EventData generateEventData(EventType eventType, LogCode logCode, 
                   char* timeString, OpCodeType* programCounter, PCB* process);
 void *threadRunTimer(void* ptr);
-void logToFile(char* completeLog);
+void logToFile(LogLinkedList* listCurrentPtr);
+LogLinkedList* addNodeLL( LogLinkedList* localPtr, LogLinkedList* newNode );
+LogLinkedList* clearLinkedList( LogLinkedList* localPtr );
 
 #endif // SIM_RUNNER_H
 
