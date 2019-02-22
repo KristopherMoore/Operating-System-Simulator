@@ -19,50 +19,32 @@
 int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
 {
    //initializations
-   int timeToWaitMs = 1000;
+   int timeToWaitMs = 0;
    double currentTime = 0.0;
    char timeString[MAX_STR_LEN];
    OpCodeType* loopMetaDataPtr;
    OpCodeType* currentProgramCounter;
+   PCB* process = NULL;
    int processCount = 0;
    int indexI = 0;
    int scheduledProcess = 0;
+   int oldScheduledProcess = 0;
    Boolean processingFlag = True;
    Boolean foundProcessFlag = False;
    EventData eventData;
    
    //Start Event Logging
    printf( "==========================\n" );
-   printf("Begin Simulation\n");
+   printf("Begin Simulation\n\n");
    
    //EVENT LOG: System Start
    currentTime = accessTimer(ZERO_TIMER, timeString);
-   eventData = generateEventData(OS, SystemStart, timeString);
+   eventData = generateEventData(OS, SystemStart, timeString, mdData, process);
    eventLogger(eventData);
-   
-   //START TESTING CODE: ///////////////////////////////////////////////////////
-   currentTime = accessTimer(ZERO_TIMER, timeString);
-   printf("\nCur Time: %lf", currentTime);
-   printf("\nCur TimeSTR: %s", timeString);
-   
-   runTimer(timeToWaitMs);
-   
-   currentTime = accessTimer(LAP_TIMER, timeString);
-   printf("\nCur Time: %lf", currentTime);
-   printf("\nCur TimeSTR: %s", timeString);
-   
-   timeToWaitMs = 0.01;
-   runTimer(timeToWaitMs);
-   
-   currentTime = accessTimer(LAP_TIMER, timeString);
-   printf("\nCur Time: %lf", currentTime);
-   printf("\nCur TimeSTR: %s", timeString);
-   
-   //END TESTING CODE: /////////////////////////////////////////////////////////
    
    //EVENT LOG: Create PCB'S
    currentTime = accessTimer(LAP_TIMER, timeString);
-   eventData = generateEventData(OS, CreatePCBs, timeString);
+   eventData = generateEventData(OS, CreatePCBs, timeString, mdData, process);
    eventLogger(eventData);
    
    //Create our PCB's, start by counting how many we need(processes in MetaData)
@@ -85,7 +67,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    
    //EVENT LOG: All Processes init in NEW
    currentTime = accessTimer(LAP_TIMER, timeString);
-   eventData = generateEventData(OS, AllProcNEW, timeString);
+   eventData = generateEventData(OS, AllProcNEW, timeString, mdData, process);
    eventLogger(eventData);
    
    //Now with that count, create PCB structs for each process
@@ -97,6 +79,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       pcbArray[indexI].pId = indexI;
       
       foundProcessFlag = False;
+      
       //find ProgramCounter ptr start
       while( foundProcessFlag == False )
       {
@@ -110,22 +93,37 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       }
       
       pcbArray[indexI].programCounter = loopMetaDataPtr;
-      printf("\npcbArray[%d]: pid: %d , state: %d, programCounter: %c   %d\n", indexI, pcbArray[indexI].pId, pcbArray[indexI].pState, pcbArray[indexI].programCounter->opLtr, pcbArray[indexI].programCounter->opValue);
    }
+   
+   //EVENT LOG: All Processes init in READY
+   currentTime = accessTimer(LAP_TIMER, timeString);
+   eventData = generateEventData(OS, AllProcREADY, timeString,
+                                    pcbArray[scheduledProcess].programCounter, 
+                                                &pcbArray[scheduledProcess]);
+   eventLogger(eventData);
    
    //Initialize in READY state
    for( indexI = 0; indexI < processCount; indexI++ )
    {
       pcbArray[indexI].pState = READY;
-      printf("\npcbArray[%d]: pid: %d , state: %d\n", indexI, pcbArray[indexI].pId, pcbArray[indexI].pState);
    }
    
    //Main Simulator Loop -- Loop while we have Processes not in EXIT
-   printf("\n\n TEST BEFORE SEG FAULT\n\n");
    while( processingFlag == True )
    {
       //Select process, utilizing cpuScheduler
+      oldScheduledProcess = scheduledProcess;
       scheduledProcess = cpuScheduler( pcbArray, processCount );
+      
+      if(oldScheduledProcess != scheduledProcess)
+      {
+         //EVENT LOG: run start
+         currentTime = accessTimer(LAP_TIMER, timeString);
+         eventData = generateEventData(OS, ProcSelected, timeString,
+                                    pcbArray[scheduledProcess].programCounter, 
+                                                &pcbArray[scheduledProcess]);
+         eventLogger(eventData);
+      }
       
       //Set Process in RUNNING // check if already RUNNING, if so ignore.
       if( pcbArray[scheduledProcess].pState != RUNNING )
@@ -133,51 +131,24 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
          pcbArray[scheduledProcess].pState = RUNNING;
       }
       
-      //CHECK OPERATION TYPES and RUN ACCORDINGLY
-      //RUN OPERATIONS
+      //grab our PC, and send to Operation runner to handle run types
+         //IE, RUN, I/O, or MEM Operations
       currentProgramCounter = pcbArray[scheduledProcess].programCounter;
-      if( currentProgramCounter->opLtr == 'P' )
-      {
-         timeToWaitMs = currentProgramCounter->opValue * configDataPtr->procCycleRate;
-         runTimer(timeToWaitMs);
-   
-         currentTime = accessTimer(LAP_TIMER, timeString);
-         printf("\nCur Time: %lf", currentTime);
-         printf("\nCur TimeSTR: %s", timeString);
-      }
+      operationRunner( scheduledProcess, currentProgramCounter, configDataPtr,
+                                                                  pcbArray );
       
-      //MEMORY OPERATIONS
-      if( currentProgramCounter->opLtr == 'M' )
-      {
-         timeToWaitMs = 
-            currentProgramCounter->opValue * configDataPtr->procCycleRate;
-            
-         runTimer(timeToWaitMs);
-   
-         currentTime = accessTimer(LAP_TIMER, timeString);
-         printf("\nCur Time: %lf", currentTime);
-         printf("\nCur TimeSTR: %s", timeString);
-      }
-      
-      //I/O OPERATIONS
-      else if( currentProgramCounter->opLtr == 'I'
-               || currentProgramCounter->opLtr == 'O')
-      {
-         timeToWaitMs = 
-            currentProgramCounter->opValue * configDataPtr->ioCycleRate;
-                  
-         runTimer(timeToWaitMs);
-   
-         currentTime = accessTimer(LAP_TIMER, timeString);
-         printf("\nCur Time: %lf", currentTime);
-         printf("\nCur TimeSTR: %s", timeString);
-      }
-      
-      //APPLICATION OPS, since we started our program Counter with an offset 
+      //CHECK FOR FINISH, since we started our program Counter with an offset 
          //from start, this will only ever be A(end)0;
-      else if( currentProgramCounter->opLtr == 'A' )
+      if( currentProgramCounter->opLtr == 'A' )
       {
          pcbArray[scheduledProcess].pState = EXIT;
+            
+         //EVENT LOG: end process and set in EXIT
+         currentTime = accessTimer(LAP_TIMER, timeString);
+         eventData = generateEventData(Process, ProcEnd, timeString,
+                                    pcbArray[scheduledProcess].programCounter, 
+                                                &pcbArray[scheduledProcess]);
+         eventLogger(eventData);
       }
       
       //After each Process is checked, move the program counter, as long as the 
@@ -199,9 +170,11 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       }
    }
    
-   
-   
-   //System Stop
+   //EVENT LOG: System Stop
+   currentTime = accessTimer(LAP_TIMER, timeString);
+   eventData = generateEventData(OS, SystemStop, timeString,
+      pcbArray[scheduledProcess].programCounter, &pcbArray[scheduledProcess]);
+   eventLogger(eventData);
    
    //EXIT with normal operation
    printf("\nEnd Simulation - Complete\n");
@@ -218,7 +191,8 @@ int cpuScheduler(PCB* pcbArray, int processCount )
    while( scheduledPid == -1 )
    {  
       //FCFS implementation
-      if( pcbArray[indexI].pState == READY )
+      if( pcbArray[indexI].pState == READY 
+            || pcbArray[indexI].pState == RUNNING )
       {
          scheduledPid = pcbArray[indexI].pId;
       }
@@ -227,6 +201,76 @@ int cpuScheduler(PCB* pcbArray, int processCount )
    }
    
    return scheduledPid;
+}
+
+void operationRunner(int scheduledProcess,OpCodeType* programCounter,
+                                 ConfigDataType* configDataPtr, PCB* pcbArray)
+{
+   char timeString[MAX_STR_LEN];
+   int timeToWaitMs = 0;
+   double currentTime = 0.0;
+   EventData eventData;
+   
+   //RUN OPERATIONS
+   if( programCounter->opLtr == 'P' )
+   { 
+      //EVENT LOG: run start
+      currentTime = accessTimer(LAP_TIMER, timeString);
+      eventData = generateEventData(Process, ProcOpStart, timeString,
+                                 programCounter, &pcbArray[scheduledProcess]);
+      eventLogger(eventData);
+      
+      //Wait out our time
+      timeToWaitMs = programCounter->opValue * configDataPtr->procCycleRate;
+      runTimer(timeToWaitMs);
+   
+      //EVENT LOG: run end
+      currentTime = accessTimer(LAP_TIMER, timeString);
+      eventData = generateEventData(Process, ProcOpEnd, timeString,
+                                 programCounter, &pcbArray[scheduledProcess]);
+      eventLogger(eventData);
+   }
+   
+   //MEMORY OPERATIONS
+   else if( programCounter->opLtr == 'M' )
+   {
+      //EVENT LOG: run start
+      currentTime = accessTimer(LAP_TIMER, timeString);
+      eventData = generateEventData(Process, ProcOpStart, timeString,
+                                 programCounter, &pcbArray[scheduledProcess]);
+      eventLogger(eventData);
+         
+      //Wait out our time
+      timeToWaitMs = programCounter->opValue * configDataPtr->procCycleRate;
+      runTimer(timeToWaitMs);
+   
+      //EVENT LOG: run end
+      currentTime = accessTimer(LAP_TIMER, timeString);
+      eventData = generateEventData(Process, ProcOpEnd, timeString,
+                                 programCounter, &pcbArray[scheduledProcess]);
+      eventLogger(eventData);
+   }
+      
+   //I/O OPERATIONS
+   else if( programCounter->opLtr == 'I'
+            || programCounter->opLtr == 'O')
+   {
+      //EVENT LOG: run start
+      currentTime = accessTimer(LAP_TIMER, timeString);
+      eventData = generateEventData(Process, ProcOpStart, timeString,
+                                 programCounter, &pcbArray[scheduledProcess]);
+      eventLogger(eventData);
+         
+      //Wait out our time
+      timeToWaitMs = programCounter->opValue * configDataPtr->procCycleRate;
+      runTimer(timeToWaitMs);
+   
+      //EVENT LOG: run end
+      currentTime = accessTimer(LAP_TIMER, timeString);
+      eventData = generateEventData(Process, ProcOpEnd, timeString,
+                                 programCounter, &pcbArray[scheduledProcess]);
+      eventLogger(eventData);
+   }
 }
 
 void eventLogger(EventData eventData)
@@ -279,20 +323,30 @@ void eventLogger(EventData eventData)
          concatenateString( logCodeStr, 
                               "All processes initialized in READY state\n" );
          break;
-         
+      
+      case ProcOpStart:
+         sprintf( logCodeStr, "%d %s operation start\n",
+                              eventData.pId, eventData.opStartOrEnd);
+         break;
+      
+      case ProcOpEnd:
+         sprintf( logCodeStr, "%d %s operation end\n",
+                              eventData.pId, eventData.opStartOrEnd);
+         break;
+      
       case ProcSelected:
-         sprintf( logCodeStr, "Process: %d selected with %d  remaining\n",
-                              eventData.pId, eventData.remainingTime);
+         sprintf( logCodeStr, "%d selected with %d  remaining\n",
+                              eventData.pId, -100);
          break;
          
       case ProcSetIn:
-         sprintf( logCodeStr, "Process: %d set in %s  state\n",
-                              eventData.pId, eventData.pStateStr);
+         sprintf( logCodeStr, "%d set in %s  state\n",
+                              eventData.pId, "TESTFIX");
          break;
          
       case ProcEnd:
-         sprintf( logCodeStr, "Process: %d ended and set in %s  state\n",
-                              eventData.pId, eventData.pStateStr);
+         sprintf( logCodeStr, "%d ended and set in %s  state\n",
+                              eventData.pId, "TESTFIX");
          break;
          
       case SystemStop:
@@ -310,6 +364,7 @@ void eventLogger(EventData eventData)
    }
    
    //concat the strings
+   concatenateString( finalLogStr, "\t" );
    concatenateString( finalLogStr, eventData.timeToPrint );
    concatenateString( finalLogStr, "," );
    concatenateString( finalLogStr, eventStr );
@@ -321,7 +376,7 @@ void eventLogger(EventData eventData)
 }
 
 EventData generateEventData(EventType eventType, LogCode logCode, 
-                                                            char* timeString)
+                     char* timeString, OpCodeType* programCounter, PCB* process)
 {
    EventData eventData;
    
@@ -329,6 +384,26 @@ EventData generateEventData(EventType eventType, LogCode logCode,
    eventData.eventType = eventType;
    eventData.logCode = logCode;
    eventData.timeToPrint = timeString;
+   eventData.opStartOrEnd = "";
+   eventData.pStateStr = "";
+   eventData.remainingTime = 0;
+   eventData.pId = -1;
+   
+   
+   //return if our pointer isnt valid, the following calls rely on the process
+   if( process == NULL  || programCounter == NULL )
+   {
+      return eventData;
+   }
+   
+   //eventData.pStateStr = process->pState;
+   eventData.remainingTime = process->remainingTimeMs;
+   
+   //check if we have a process id to set
+   if(process->pId >= 0)
+   {   
+      eventData.pId = process->pId;
+   }
    
    return eventData;
 }

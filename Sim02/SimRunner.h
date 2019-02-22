@@ -26,6 +26,8 @@ typedef enum
    CreatePCBs,
    AllProcNEW,
    AllProcREADY,
+   ProcOpStart,
+   ProcOpEnd,
    ProcSelected,
    ProcSetIn,
    ProcEnd,
@@ -43,6 +45,7 @@ typedef struct
    int pId;
    int remainingTime;
    char* pStateStr;
+   char* opStartOrEnd;
 } EventData;
 
 //Process States
@@ -68,9 +71,11 @@ typedef struct
 //function prototypes
 int simulationRunner( ConfigDataType* configDataPtr, OpCodeType* mdData );
 int cpuScheduler( PCB* pcbArray, int processCount );
+void operationRunner(int scheduledProcess, OpCodeType* programCounter, 
+                                 ConfigDataType* configDataPtr, PCB* pcbArray);
 void eventLogger(EventData eventData);
 EventData generateEventData(EventType eventType, LogCode logCode, 
-                                                            char* timeString);
+                  char* timeString, OpCodeType* programCounter, PCB* process);
 
 #endif // SIM_RUNNER_H
 
