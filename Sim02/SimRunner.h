@@ -72,10 +72,15 @@ typedef struct
 int simulationRunner( ConfigDataType* configDataPtr, OpCodeType* mdData );
 int cpuScheduler( PCB* pcbArray, int processCount );
 void operationRunner(int scheduledProcess, OpCodeType* programCounter, 
-                                 ConfigDataType* configDataPtr, PCB* pcbArray);
-void eventLogger(EventData eventData);
+                                 ConfigDataType* configDataPtr, 
+                                                      PCB* pcbArray,
+                                                            char* completeLog);
+void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
+                                                            char* completeLog);
 EventData generateEventData(EventType eventType, LogCode logCode, 
                   char* timeString, OpCodeType* programCounter, PCB* process);
+void *threadRunTimer(void* ptr);
+void logToFile(char* completeLog);
 
 #endif // SIM_RUNNER_H
 

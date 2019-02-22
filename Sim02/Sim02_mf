@@ -4,7 +4,7 @@ CFLAGS = -Wall -std=c99 -pedantic -c $(DEBUG)
 LFLAGS = -Wall -std=c99 -pedantic $(DEBUG)
 
 Sim02 : Sim02.o MetaDataAccess.o ConfigAccess.o SimRunner.o simTimer.o StringUtils.o
-	$(CC) $(LFLAGS) Sim02.o MetaDataAccess.o ConfigAccess.o SimRunner.o simTimer.o StringUtils.o -o Sim02
+	$(CC) $(LFLAGS) Sim02.o MetaDataAccess.o ConfigAccess.o SimRunner.o simTimer.o StringUtils.o -o Sim02 -lpthread
 
 Sim02.o : Sim02.c
 	$(CC) $(CFLAGS) Sim02.c

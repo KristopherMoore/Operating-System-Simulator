@@ -1,0 +1,6 @@
+  	 0.000000, OS:  System Start
+  	 0.007284, OS:  Create Process Control Blocks
+  	 0.008942, OS:  All processes initialized in NEW state
+  	 0.010196, OS:  All processes initialized in READY state
+  	 9.544973, OS:  System Stop
+ 
