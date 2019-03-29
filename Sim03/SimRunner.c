@@ -167,7 +167,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
          {
             foundProcessFlag = True;
          }
-         else
+         else if ( currentProgramCounter->opLtr != 'M' )
          {
             //check which op type cycle rate to multiply by
             if( currentProgramCounter->opLtr == 'P' )
@@ -299,18 +299,6 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    listHeadPtr = clearLinkedList( listHeadPtr );
    free( newNodePtr );
    
-   //TESTING CODE: REMOVE
-   printf("\n\nTESTING CODE REMOVE: MMU final contents: " );
-   mmuCurrentPtr = mmuHeadPtr;
-   while( mmuCurrentPtr != NULL )
-   {
-      printf("\nPID: %d   ", mmuCurrentPtr->pId);
-      printf("segNumber: %d   ", mmuCurrentPtr->segNumber);
-      printf("memBase: %d   ", mmuCurrentPtr->memBase);
-      printf("memOffset: %d   ", mmuCurrentPtr->memOffset);
-      mmuCurrentPtr = mmuCurrentPtr->next;
-   }
-   
    //clear our our MMU linkedList
    mmuHeadPtr = clearMMU( mmuHeadPtr );
    free( mmuNewPtr );
@@ -333,21 +321,23 @@ int cpuScheduler(PCB* pcbArray, int processCount, ConfigDataType* configDataPtr)
    int scheduledPid = -1;
    int indexI = 0;
    int shortestJobFound = 999999999;
+   int scheduleCode = configDataPtr->cpuSchedCode;
    
    //run until we find a pid that is scheduled
-   while( scheduledPid == -1 )
+   while( indexI < processCount )
    {  
       //only work on processess that are ready or running
       if( pcbArray[indexI].pState == READY 
             || pcbArray[indexI].pState == RUNNING )
       {
          //FCFS-N implementation
-         if( configDataPtr->cpuSchedCode == CPU_SCHED_FCFS_N_CODE )
+         if( scheduleCode == CPU_SCHED_FCFS_N_CODE && scheduledPid == -1 )
          {
             scheduledPid = pcbArray[indexI].pId;
          }
-         //SJF-N implementations
-         else if( configDataPtr->cpuSchedCode == CPU_SCHED_SJF_N_CODE )
+         
+         //SJF-N implementation
+         else if( scheduleCode == CPU_SCHED_SJF_N_CODE )
          {
             if( pcbArray[indexI].remainingTimeMs < shortestJobFound )
             {
@@ -646,9 +636,9 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
       
       case MMUAllocAttempt:
          sprintf( logCodeStr, " MMU attempt to allocate %d/%d/%d\n", 
-                                             -9,
-                                             -9,
-                                             -9 );
+                                             eventData.mmuData.segNumber,
+                                             eventData.mmuData.memBase,
+                                             eventData.mmuData.memOffset );
          break;
       
       case MMUAllocSuccess:
@@ -660,7 +650,10 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
          break;
          
       case MMUAccessAttempt:
-         sprintf( logCodeStr, " MMU attempt to access %d/%d/%d\n", -1,-1,-1 );
+         sprintf( logCodeStr, " MMU attempt to access %d/%d/%d\n", 
+                                             eventData.mmuData.segNumber,
+                                             eventData.mmuData.memBase,
+                                             eventData.mmuData.memOffset );
          break;
       
       case MMUAccessSuccess:
