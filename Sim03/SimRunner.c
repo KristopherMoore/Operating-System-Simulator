@@ -264,10 +264,10 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
             pcbArray[scheduledProcess].programCounter->next;
       }
       
+      processingFlag = False;
       //Check if all processing are in EXIT, if so we stop simulating
       for( indexI = 0; indexI < processCount; indexI++ )
       {
-         processingFlag = False;
          if( pcbArray[indexI].pState != EXIT )
          {
             processingFlag = True;
@@ -344,6 +344,12 @@ int cpuScheduler(PCB* pcbArray, int processCount, ConfigDataType* configDataPtr)
                scheduledPid = pcbArray[indexI].pId;
                shortestJobFound = pcbArray[indexI].remainingTimeMs;
             }
+         }
+         
+         //default to FCFS-N // still need to ensure we hadnt selected a job yet
+         else if ( scheduledPid == -1 )
+         {
+            scheduledPid = pcbArray[indexI].pId;
          }
       }
       

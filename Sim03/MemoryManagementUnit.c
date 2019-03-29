@@ -12,9 +12,11 @@
 
 /*
 Function name: mmuAllocate
-Algorithm: 
-Precondition: 
-Postcondition: 
+Algorithm: utlizes configdata, muu ptrs and mmu data to verify if allocation
+            can occur, segfaults if access overfills or another process owns
+            requested memory
+Precondition:  mmu linked list established and ptrs to it
+Postcondition: provides a 1 for segfaults and a 0 for clean allocs.
 Exceptions: none
 Notes: none
 */
@@ -74,9 +76,11 @@ int mmuAllocate(ConfigDataType* configDataPtr, MMU* mmuCurrentPtr,
 
 /*
 Function name: mmuAccess
-Algorithm: 
-Precondition: 
-Postcondition: 
+Algorithm:     utilizes config data, mmu linked list and mmuData to assess if
+               a memory access can occur. Segfaults if no applicable access can
+               be preformed.
+Precondition:  mmu linked list and ptrs to it
+Postcondition: provides a 1 for segfaults and a 0 for clean accesses
 Exceptions: none
 Notes: none
 */
@@ -170,6 +174,14 @@ MMU* clearMMU( MMU* localPtr )
    return NULL; 
 }
 
+/*
+Function name: fillMMU
+Algorithm: simple function responsible filling in mmudata to a mmu struct
+Precondition: mmu data: pid, SS, BBB, AAA values
+Postcondition: returns the filled in mmu struct
+Exceptions: none
+Notes: none
+*/
 MMU fillMMU( int pid, int segNumber, int memBase, int memOffset)
 {
    MMU mmu;
