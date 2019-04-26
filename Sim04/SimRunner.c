@@ -119,43 +119,16 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    
    //init threadManager
    threadManager(tINIT, NULL);
-   
-   //TESTING QUEUE
-   printf("\n\nDEBUG----->IQ, isEmpty %d", interruptQueue(ISEMPTY, 9, processCount));
-   printf("\n\nDEBUG----->PUSH %d", interruptQueue(ENQUEUE, 2, processCount));
-   printf("\n\nDEBUG----->IQ, isEmpty %d", interruptQueue(ISEMPTY, 9, processCount));
-   printf("\n\nDEBUG----->PUSH %d", interruptQueue(ENQUEUE, 5, processCount));
-   printf("\n\nDEBUG----->POP %d", interruptQueue(DEQUEUE, 9, processCount));
-   printf("\n\nDEBUG----->POP %d", interruptQueue(DEQUEUE, 9, processCount));
-   printf("\n\nDEBUG----->POP %d", interruptQueue(DEQUEUE, 9, processCount));
-   printf("\n\nDEBUG----->IQ, isEmpty %d\n\n\\n\n", interruptQueue(ISEMPTY, 9, processCount));
-   
+    
    
    //MAIN SIMULATOR LOOP -- Loop while we have Processes not in EXIT
    while( processingFlag == True )
    {
-      printf("\nITERATION...");
+      //printf("\nITERATION...\n");
       //Select process, utilizing cpuScheduler
       oldScheduledProcess = scheduledProcess;
       scheduledProcess = cpuScheduler( pcbArray, processCount, configDataPtr );
       
-      //check if we are idle, and we dont have any interrupts
-      if( idleFlag == True && interruptQueue( ISEMPTY, 0, 0 ) )
-      {
-         printf("\nIDLE>>>");
-         pthread_t runningThread = threadManager( tPOP, NULL );
-         if(runningThread == NULL)
-         {
-            printf("\nP...........NULL");
-         }
-         else
-         {
-            pthread_join( runningThread, NULL);
-            //free((void*)runningThread);
-         }
-         //if we are still idling, and no interrupts, skip over till we get one
-         //continue;
-      }
       
       //check for interupts, if our queue is not empty, then we need to process
       if( !interruptQueue( ISEMPTY, 0, 0 ) )
@@ -178,6 +151,27 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
                                              &pcbArray[interruptedPid] );
          eventLogger( eventData, configDataPtr, listCurrentPtr );
          }
+      }
+      
+      //check if we didnt have any interrupts and we are Idle
+      else if( idleFlag == True )
+      {
+         //printf("\n");
+         pthread_t runningThread = threadManager( tFIRST, NULL );
+         threadManager( tPOP, NULL );
+         if(!runningThread)
+         {
+            printf("\nP...........NULL");
+            free((void*)runningThread);
+         }
+         else
+         {
+            //printf("K");
+            //pthread_join( runningThread, NULL);
+            //free((void*)runningThread);
+         }
+         //if we are still idling, and no interrupts, skip over till we get one
+         //continue;
       }
       
       //check if all processes are blocked, if so SYS IDLE
@@ -414,11 +408,6 @@ int operationRunner( int scheduledProcess,OpCodeType* programCounter,
    int segFaultFlag = 0;
    EventData eventData;
    
-   //pthread_setconcurrency(4);
-   
-   //pthread initializations
-   pthread_t thread1;
-   
    //RUN OPERATIONS
    if( programCounter->opLtr == 'P' )
    { 
@@ -566,7 +555,7 @@ int operationRunner( int scheduledProcess,OpCodeType* programCounter,
       threadInput->timeToWait = timeToWaitMs;
       threadInput->pId = scheduledProcess;
       
-      printf("THREAD CREATED , timeToWaitMS: %d", timeToWaitMs);
+      printf("\nTHREAD CREATED , timeToWaitMS: %d\n", timeToWaitMs);
       
       //ensure we send the memoryLocation of timeToWaitMs as a void* cast
       threadManager( tPUSH, threadInput );
@@ -611,14 +600,14 @@ void* threadRunTimer( void* threadInput )
    int timeToWaitMs = (int) (((ThreadInput*)threadInput) -> timeToWait);
    int processId = (int) (((ThreadInput*)threadInput) -> pId);
    
-   printf("\n\nTHREAD::   :::TIME TO WAIT BEFORE : %d", timeToWaitMs);
+   //printf("\n\nxxxxTHREAD::   :::TIME TO WAIT BEFORE : %d", timeToWaitMs);
    
    //deference the pointer and send off the run timer
    runTimer( timeToWaitMs );
    
-   printf("\n\nTHREAD::   :::TIME TO WAIT AFTER : %d", timeToWaitMs);
+   //printf("\n\nxxxxTHREAD::   :::TIME TO WAIT AFTER : %d", timeToWaitMs);
    
-   printf("\n\nTHREAD ENDED, add to interrupt queue");
+   //printf("\n\nTHREAD ENDED, add to interrupt queue");
    interruptQueue(ENQUEUE, processId, -1);
    
    //free our allocated space
@@ -643,6 +632,8 @@ pthread_t threadManager(ThreadAction action, ThreadInput* threadInput)
    pthread_t toReturn;
    
    pthread_t newThread;
+   
+   pthread_setconcurrency(4);
    
    //check our requested action againts our enumerator possible values
    switch( action )
@@ -711,6 +702,10 @@ pthread_t threadManager(ThreadAction action, ThreadInput* threadInput)
             return 0;
          }
          break;
+      
+      case tFIRST:
+         toReturn = *(threads + 0);
+         return toReturn;
    }
    
    //safe exit

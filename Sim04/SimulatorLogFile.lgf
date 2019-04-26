@@ -9,65 +9,82 @@ Processor Cycle Rate (ms/cycle)	: 10
 I/O Cycle Rate (ms/cycle)	: 20
 
    	 0.000000, OS:  System Start
-   	 0.011508, OS:  Create Process Control Blocks
-   	 0.016048, OS:  All processes initialized in NEW state
-   	 0.017386, OS:  All processes initialized in READY state
-   	 0.029087, OS: Process 0 selected with 3840 ms remaining
-   	 0.032998, OS: Process 0 set in RUNNING state
-   	 0.035158, Process: 0, run operation start
-   	 0.146807, Process: 0, run operation end
-   	 0.149750, Process: 0, hard drive input start
-   	 0.165829, OS: Process 0 set in BLOCKED state
-   	 0.168215, OS: Process 1 selected with 5550 ms remaining
-   	 0.168373, OS: Process 1 set in RUNNING state
-   	 0.168467, Process: 1, run operation start
-   	 0.218565, Process: 1, run operation end
-   	 0.218994, Process: 1, printer output start
-   	 0.228548, OS: Process 1 set in BLOCKED state
-   	 0.228970, OS:  System/CPU idle
-   	 0.233393, OS:  System/CPU idle
-   	 2.139175, OS: Interrupt called by Process 0
-   	 2.140495, OS: Interrupt called by Process 1
-   	 2.140764, OS: Process 0 selected with 3840 ms remaining
-   	 2.140884, OS: Process 0 set in RUNNING state
-   	 2.140978, Process: 0, run operation start
-   	 2.291080, Process: 0, run operation end
-   	 2.291328, Process: 0, keyboard input start
-   	 2.293905, OS: Process 0 set in BLOCKED state
-   	 2.294097, OS: Process 1 selected with 5550 ms remaining
-   	 2.294195, OS: Process 1 set in RUNNING state
-   	 2.294288, Process: 1, keyboard input start
-   	 2.302483, OS: Process 1 set in BLOCKED state
-   	 2.302741, OS:  System/CPU idle
-   	 5.903589, OS: Interrupt called by Process 1
-   	 5.904193, OS: Interrupt called by Process 0
-   	 5.904357, OS: Process 1 selected with 5550 ms remaining
-   	 5.904528, OS: Process 1 set in RUNNING state
-   	 5.904688, Process: 1, keyboard input start
-   	 5.913161, OS: Process 1 set in BLOCKED state
-   	 5.914258, OS: Process 0 selected with 3840 ms remaining
-   	 5.914514, OS: Process 0 set in RUNNING state
-   	 5.914692, Process: 0, hard drive input start
-   	 5.924042, OS: Process 0 set in BLOCKED state
-   	 5.924591, OS:  System/CPU idle
-   	 5.924962, OS:  System/CPU idle
-   	 8.645836, OS: Interrupt called by Process 1
-   	 8.646234, OS: Interrupt called by Process 0
-   	 8.646346, OS: Process 1 selected with 5550 ms remaining
-   	 8.646450, OS: Process 1 set in RUNNING state
-   	 8.646549, Process: 1, monitor output start
-   	 8.646717, OS: Process 1 set in BLOCKED state
-   	 8.646880, OS: Process 0 selected with 3840 ms remaining
-   	 8.646979, OS: Process 0 set in RUNNING state
-   	 8.647073, Process: 0, run operation start
-   	 8.907187, Process: 0, run operation end
-   	 8.907642, OS: Process 0 ended and set in EXIT state
+   	 0.011995, OS:  Create Process Control Blocks
+   	 0.016531, OS:  All processes initialized in NEW state
+   	 0.017888, OS:  All processes initialized in READY state
+   	 0.024858, OS: Process 1 selected with 590 ms remaining
+   	 0.030792, OS: Process 1 set in RUNNING state
+   	 0.033382, Process: 1, run operation start
+   	 0.085840, Process: 1, run operation end
+   	 0.089237, Process: 1, printer output start
+   	 0.105746, OS: Process 1 set in BLOCKED state
+   	 0.252988, OS: Interrupt called by Process 1
+   	 0.254727, OS: Process 0 selected with 1580 ms remaining
+   	 0.255026, OS: Process 0 set in RUNNING state
+   	 0.255179, Process: 0, run operation start
+   	 0.365342, Process: 0, run operation end
+   	 0.365712, OS: Process 1 selected with 590 ms remaining
+   	 0.365887, OS: Process 1 set in RUNNING state
+   	 0.366046, Process: 1, keyboard input start
+   	 0.374331, OS: Process 1 set in BLOCKED state
+   	 0.430859, OS: Process 0 selected with 1580 ms remaining
+   	 0.431256, Process: 0, hard drive input start
+   	 0.565203, OS: Process 0 set in BLOCKED state
+   	 0.566621, OS: Interrupt called by Process 0
+   	 0.566995, OS: Interrupt called by Process 1
+   	 0.567159, OS: Process 0 selected with 1580 ms remaining
+   	 0.567324, OS: Process 0 set in RUNNING state
+   	 0.567482, Process: 0, run operation start
+   	 0.717657, Process: 0, run operation end
+   	 0.718058, OS: Process 1 selected with 590 ms remaining
+   	 0.718225, OS: Process 1 set in RUNNING state
+   	 0.718385, Process: 1, keyboard input start
+   	 0.726766, OS: Process 1 set in BLOCKED state
+   	 0.927292, OS: Interrupt called by Process 1
+   	 0.927678, OS: Process 0 selected with 1580 ms remaining
+   	 0.927847, Process: 0, keyboard input start
+   	 0.936278, OS: Process 0 set in BLOCKED state
+   	 1.036065, OS: Process 1 selected with 590 ms remaining
+   	 1.036205, OS: Process 1 set in RUNNING state
+   	 1.036308, Process: 1, monitor output start
+   	 1.044712, OS: Process 1 set in BLOCKED state
+   	 1.157102, OS:  System/CPU idle
+   	 1.159462, OS:  System/CPU idle
+   	 1.159563, OS:  System/CPU idle
+   	 1.159645, OS:  System/CPU idle
+   	 1.159723, OS:  System/CPU idle
+   	 1.159834, OS:  System/CPU idle
+   	 1.159911, OS:  System/CPU idle
+   	 1.160059, OS:  System/CPU idle
+   	 1.160140, OS:  System/CPU idle
+   	 1.160217, OS:  System/CPU idle
+   	 1.160293, OS:  System/CPU idle
+   	 1.160370, OS:  System/CPU idle
+   	 1.160447, OS:  System/CPU idle
+   	 1.160524, OS:  System/CPU idle
+   	 1.160601, OS:  System/CPU idle
+   	 1.160678, OS:  System/CPU idle
+   	 1.160933, OS: Interrupt called by Process 0
+   	 1.161062, OS: Process 0 selected with 1580 ms remaining
+   	 1.161167, OS: Process 0 set in RUNNING state
+   	 1.161267, Process: 0, hard drive input start
+   	 1.171629, OS: Process 0 set in BLOCKED state
+   	 1.171961, OS:  System/CPU idle
+   	 1.172091, OS:  System/CPU idle
+   	 1.172194, OS:  System/CPU idle
+   	 1.172288, OS:  System/CPU idle
+   	 1.172376, OS:  System/CPU idle
+   	 1.892681, OS: Interrupt called by Process 0
+   	 1.892820, OS: Process 0 selected with 1580 ms remaining
+   	 1.892955, OS: Process 0 set in RUNNING state
+   	 1.893081, Process: 0, run operation start
+   	 2.153197, Process: 0, run operation end
+   	 2.153703, OS: Interrupt called by Process 1
+   	 2.154090, OS: Process 0 ended and set in EXIT state
 
-   	 8.909259, OS:  System/CPU idle
-   	 9.509704, OS: Interrupt called by Process 1
-   	 9.509868, OS: Process 1 selected with 5550 ms remaining
-   	 9.510027, OS: Process 1 set in RUNNING state
-   	 9.510129, OS: Process 1 ended and set in EXIT state
+   	 2.155684, OS: Process 1 selected with 590 ms remaining
+   	 2.155860, OS: Process 1 set in RUNNING state
+   	 2.156026, OS: Process 1 ended and set in EXIT state
 
-   	 9.510450, OS:  System Stop
+   	 2.156418, OS:  System Stop
  
