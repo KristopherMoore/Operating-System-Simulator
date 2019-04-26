@@ -1,0 +1,44 @@
+======================================
+Simulator Log File Header
+
+File Name			: metadata1.mdf
+CPU Scheduling			: 0
+Quantum Cycles			: 55
+Memory Available (KB)		: 20000
+Processor Cycle Rate (ms/cycle)	: 10
+I/O Cycle Rate (ms/cycle)	: 20
+
+   	 0.000000, OS:  System Start
+   	 0.011344, OS:  Create Process Control Blocks
+   	 0.015640, OS:  All processes initialized in NEW state
+   	 0.016903, OS:  All processes initialized in READY state
+   	 0.022422, OS: Process 0 selected with 3960 ms remaining
+   	 0.028194, OS: Process 0 set in RUNNING state
+   	 0.030288, Process: 0, run operation start
+   	 0.141933, Process: 0, run operation end
+   	 0.144556, Process: 0, hard drive input start
+   	 0.946211, Process: 0, hard drive input end
+   	 0.947988, Process: 0, run operation start
+   	 1.098094, Process: 0, run operation end
+   	 1.098264, Process: 0, keyboard input start
+   	 3.301136, Process: 0, keyboard input end
+   	 3.301280, Process: 0, hard drive input start
+   	 4.021838, Process: 0, hard drive input end
+   	 4.022228, OS: Process 0 ended and set in EXIT state
+
+   	 4.023787, OS: Process 1 selected with 5550 ms remaining
+   	 4.023887, OS: Process 1 set in RUNNING state
+   	 4.023992, Process: 1, run operation start
+   	 4.074088, Process: 1, run operation end
+   	 4.074274, Process: 1, printer output start
+   	 5.574966, Process: 1, printer output end
+   	 5.575104, Process: 1, keyboard input start
+   	 6.975450, Process: 1, keyboard input end
+   	 6.975591, Process: 1, keyboard input start
+   	 8.975977, Process: 1, keyboard input end
+   	 8.976117, Process: 1, monitor output start
+   	 9.576609, Process: 1, monitor output end
+   	 9.576752, OS: Process 1 ended and set in EXIT state
+
+   	 9.577044, OS:  System Stop
+ 
