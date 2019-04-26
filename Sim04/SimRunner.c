@@ -134,6 +134,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    //MAIN SIMULATOR LOOP -- Loop while we have Processes not in EXIT
    while( processingFlag == True )
    {
+      printf("\nITERATION...");
       //Select process, utilizing cpuScheduler
       oldScheduledProcess = scheduledProcess;
       scheduledProcess = cpuScheduler( pcbArray, processCount, configDataPtr );
@@ -143,10 +144,17 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       {
          printf("\nIDLE>>>");
          pthread_t runningThread = threadManager( tPOP, NULL );
-         pthread_join( runningThread, NULL);
-         free((void*)runningThread);
+         if(runningThread == NULL)
+         {
+            printf("\nP...........NULL");
+         }
+         else
+         {
+            pthread_join( runningThread, NULL);
+            //free((void*)runningThread);
+         }
          //if we are still idling, and no interrupts, skip over till we get one
-         continue;
+         //continue;
       }
       
       //check for interupts, if our queue is not empty, then we need to process
@@ -177,7 +185,8 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       idleFlag = False;
       for( indexI = 0; indexI < processCount; indexI++ )
       {
-         if( pcbArray[indexI].pState == BLOCKED )
+         //using if greater than equal to BLOCKED accounts for blocked and exit
+         if( pcbArray[indexI].pState >= BLOCKED )
          {
             blockCount++;
          }
