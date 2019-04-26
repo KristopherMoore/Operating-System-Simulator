@@ -1,10 +1,12 @@
-//Header File Information//////////////////////////////////////////////////////
+//Header Information///////////////////////////////////////////////////////////
 /*
  * @file SimRunner.h
  *
- * @version 2.00
- *          Kristopher Moore (19 February 2019)
- *          Initial Sim02 Build.
+ *
+ * @version 4.02
+ *          Kristopher Moore (25 April 2019)
+ *          Initial Sim04 Build.
+ *          Scheduler / Thread Extensions
  */
  
  //NOTE: This header is the base for both SimRunner.c and Logger.c, as they
@@ -128,7 +130,6 @@ typedef struct
 typedef enum
 {
    tINIT,
-   tISEMPTY,
    tPUSH,
    tPOP,
    tDESTRUCT,
