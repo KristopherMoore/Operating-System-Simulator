@@ -28,8 +28,8 @@ typedef enum
    NEW,
    READY,
    RUNNING,
-   EXIT,
-   BLOCKED
+   BLOCKED,
+   EXIT
    
 } ProcessState;
 
@@ -60,10 +60,12 @@ typedef enum
    CreatePCBs,
    AllProcNEW,
    AllProcREADY,
+   Interrupt,
    ProcOpStart,
    ProcOpEnd,
    ProcSelected,
    ProcSetIn,
+   ProcBlocked,
    ProcEnd,
    MMUAllocAttempt,
    MMUAllocSuccess,
@@ -72,6 +74,7 @@ typedef enum
    MMUAccessSuccess,
    MMUAccessFailed,
    SegFault,
+   SystemIdle,
    SystemStop,
    EndSim
    
@@ -103,10 +106,13 @@ typedef struct LogLinkedList
 typedef enum
 {
    INIT,
-   PUSH,
-   POP,
+   ENQUEUE,
+   DEQUEUE,
    DESTRUCT,
-   ISEMPTY
+   ISEMPTY,
+   ISFULL,
+   HEAD,
+   REAR
    
 } InterruptAction;
 
@@ -118,6 +124,17 @@ typedef struct
    
 } ThreadInput;
 
+//Thread Action Codes
+typedef enum
+{
+   tINIT,
+   tISEMPTY,
+   tPUSH,
+   tPOP,
+   tDESTRUCT
+   
+} ThreadAction;
+
 
 //function prototypes for SimRunner.c
 int simulationRunner( ConfigDataType* configDataPtr, OpCodeType* mdData );
@@ -128,6 +145,7 @@ int operationRunner( int scheduledProcess, OpCodeType* programCounter,
                                     LogLinkedList* listCurrentPtr,
                                        MMU* mmuCurrentPtr, MMU* mmuHeadPtr );
 void *threadRunTimer( void* threadInput );
+pthread_t threadManager(ThreadAction action, ThreadInput* threadInput);
 int findProcessCount( OpCodeType* loopMetaDataPtr, OpCodeType* mdData );
 void createPCBs( PCB* pcbArray, OpCodeType* loopMetaDataPtr, int processCount );
 void initInReady( PCB* pcbArray, int processCount );

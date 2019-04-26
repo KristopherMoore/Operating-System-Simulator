@@ -76,6 +76,11 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
          concatenateString( logCodeStr, 
                               "All processes initialized in READY state\n" );
          break;
+         
+      case Interrupt:
+         sprintf( logCodeStr, "Interrupt called by Process %d\n",
+                                                               eventData.pId );
+         break;
       
       case ProcOpStart:
          sprintf( logCodeStr, "%s start\n", eventData.opType );
@@ -92,6 +97,11 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
          
       case ProcSetIn:
          sprintf( logCodeStr, "Process %d set in RUNNING state\n",
+                                                               eventData.pId );
+         break;
+      
+      case ProcBlocked:
+         sprintf( logCodeStr, "Process %d set in BLOCKED state\n",
                                                                eventData.pId );
          break;
          
@@ -135,6 +145,10 @@ void eventLogger(EventData eventData, ConfigDataType* configDataPtr,
                  "Process %d experiences segmentation fault\n", eventData.pId );
          break;
       
+      case SystemIdle:
+         concatenateString( logCodeStr, "System/CPU idle\n" );
+         break;
+         
       case SystemStop:
          concatenateString( logCodeStr, "System Stop\n" );
          break;

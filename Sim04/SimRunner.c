@@ -41,6 +41,8 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    int scheduledProcess = 0;
    int oldScheduledProcess = 0;
    int segFaultFlag = 0;
+   int interruptedPid = 0;
+   Boolean idleFlag = False;
    Boolean processingFlag = True;
    Boolean isFirstRun = True;
    EventData eventData;
@@ -115,6 +117,19 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    //Calculate each of the remaining times on each Process
    calcRemainingTimes( pcbArray, configDataPtr, processCount );
    
+   //init threadManager
+   threadManager(tINIT, NULL);
+   
+   //TESTING QUEUE
+   printf("\n\nDEBUG----->IQ, isEmpty %d", interruptQueue(ISEMPTY, 9, processCount));
+   printf("\n\nDEBUG----->PUSH %d", interruptQueue(ENQUEUE, 2, processCount));
+   printf("\n\nDEBUG----->IQ, isEmpty %d", interruptQueue(ISEMPTY, 9, processCount));
+   printf("\n\nDEBUG----->PUSH %d", interruptQueue(ENQUEUE, 5, processCount));
+   printf("\n\nDEBUG----->POP %d", interruptQueue(DEQUEUE, 9, processCount));
+   printf("\n\nDEBUG----->POP %d", interruptQueue(DEQUEUE, 9, processCount));
+   printf("\n\nDEBUG----->POP %d", interruptQueue(DEQUEUE, 9, processCount));
+   printf("\n\nDEBUG----->IQ, isEmpty %d\n\n\\n\n", interruptQueue(ISEMPTY, 9, processCount));
+   
    
    //MAIN SIMULATOR LOOP -- Loop while we have Processes not in EXIT
    while( processingFlag == True )
@@ -123,8 +138,69 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       oldScheduledProcess = scheduledProcess;
       scheduledProcess = cpuScheduler( pcbArray, processCount, configDataPtr );
       
+      //check if we are idle, and we dont have any interrupts
+      if( idleFlag == True && interruptQueue( ISEMPTY, 0, 0 ) )
+      {
+         printf("\nIDLE>>>");
+         pthread_t runningThread = threadManager( tPOP, NULL );
+         pthread_join( runningThread, NULL);
+         free((void*)runningThread);
+         //if we are still idling, and no interrupts, skip over till we get one
+         continue;
+      }
+      
+      //check for interupts, if our queue is not empty, then we need to process
+      if( !interruptQueue( ISEMPTY, 0, 0 ) )
+      {
+         interruptedPid = -1;
+         interruptedPid = interruptQueue( DEQUEUE, 0, 0 );
+         if( interruptedPid < 0 )
+         {
+            //printf("\nDEBUG----> IS EMPTY QUEUE EMPTY");
+         }
+         else
+         {
+         printf("\n\n\ninterruptedPID: %d", interruptedPid);
+         pcbArray[interruptedPid].pState = READY;
+         
+         //EVENT LOG: Interrupt Called by Process interruptedPid
+         accessTimer( LAP_TIMER, timeString );
+         eventData = generateEventData( OS, Interrupt, timeString,
+                                 pcbArray[interruptedPid].programCounter, 
+                                             &pcbArray[interruptedPid] );
+         eventLogger( eventData, configDataPtr, listCurrentPtr );
+         }
+      }
+      
+      //check if all processes are blocked, if so SYS IDLE
+      int blockCount = 0;
+      idleFlag = False;
+      for( indexI = 0; indexI < processCount; indexI++ )
+      {
+         if( pcbArray[indexI].pState == BLOCKED )
+         {
+            blockCount++;
+         }
+         
+         if( blockCount == processCount )
+         {
+            //EVENT LOG: BEGIN SYSTEM IDLE
+            accessTimer( LAP_TIMER, timeString );
+            eventData = generateEventData( OS, SystemIdle, timeString, NULL, 
+                                                                        NULL);
+            eventLogger( eventData, configDataPtr, listCurrentPtr );
+            idleFlag = True;
+         }
+      }
+      
+      //ensure our scheduler picked a valid process
+      if( scheduledProcess < 0 )
+      {
+         continue;
+      }
+      
       //check if our selected process is new, otherwise ignore.
-      if(oldScheduledProcess != scheduledProcess || isFirstRun == True)
+      if( oldScheduledProcess != scheduledProcess || isFirstRun == True )
       {
          isFirstRun = False;
          
@@ -184,9 +260,11 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
       }
       
       //After each Process is checked, move the program counter, as long as the 
-         //process is not in EXIT
-      if( pcbArray[scheduledProcess].pState != EXIT )
+         //process is not in EXIT 
+      printf("\nPROCESS STATE: %d", pcbArray[scheduledProcess].pState);
+      if( pcbArray[scheduledProcess].pState < EXIT )
       {
+         printf("\nENTERED PROCESS STATE: %d", pcbArray[scheduledProcess].pState);
          pcbArray[scheduledProcess].programCounter = 
             pcbArray[scheduledProcess].programCounter->next;
       }
@@ -230,16 +308,11 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
    mmuHeadPtr = clearMMU( mmuHeadPtr );
    free( mmuNewPtr );
    
-   printf("\n\nDEBUG----->IQ, isEmpty %d", interruptQueue(ISEMPTY, 9, processCount));
-   printf("\n\nDEBUG----->InterruptQueue %d", interruptQueue(POP, 9, processCount));
-   printf("\n\nDEBUG----->InterruptQueue %d", interruptQueue(POP, 9, processCount));
-   printf("\n\nDEBUG----->InterruptQueue %d", interruptQueue(POP, 9, processCount));
-   printf("\n\nDEBUG----->IQ, isEmpty %d", interruptQueue(ISEMPTY, 9, processCount));
-   
-   
-   
    //clear interrupt queue
    interruptQueue(DESTRUCT, 0, processCount);
+   
+   //clear threadmanager
+   threadManager(tDESTRUCT, NULL);
    
    //safe return from simulationRunner
    return 0;
@@ -331,6 +404,8 @@ int operationRunner( int scheduledProcess,OpCodeType* programCounter,
    int timeToWaitMs = 0;
    int segFaultFlag = 0;
    EventData eventData;
+   
+   //pthread_setconcurrency(4);
    
    //pthread initializations
    pthread_t thread1;
@@ -482,20 +557,30 @@ int operationRunner( int scheduledProcess,OpCodeType* programCounter,
       threadInput->timeToWait = timeToWaitMs;
       threadInput->pId = scheduledProcess;
       
+      printf("THREAD CREATED , timeToWaitMS: %d", timeToWaitMs);
+      
       //ensure we send the memoryLocation of timeToWaitMs as a void* cast
-      pthread_create( &thread1, NULL, threadRunTimer, (void*) threadInput );
+      threadManager( tPUSH, threadInput );
+      //pthread_create( &thread1, NULL, threadRunTimer, (void*) threadInput );
+      //pthread_detach(thread1);
       
       //place our process in blocked, interruptQueue pop will handle unblocking
       pcbArray[scheduledProcess].pState = BLOCKED;
       
       //TEST REMOVE OF PJOINS
-      pthread_join( thread1, NULL);
+      //pthread_join( thread1, NULL);
    
-      //EVENT LOG: io end
+      //EVENT LOG: Process set in BLOCKED
       accessTimer( LAP_TIMER, timeString );
-      eventData = generateEventData( Process, ProcOpEnd, timeString,
+      eventData = generateEventData( OS, ProcBlocked, timeString,
                                  programCounter, &pcbArray[scheduledProcess] );
       eventLogger( eventData, configDataPtr, listCurrentPtr );
+   
+      //EVENT LOG: io end
+      //accessTimer( LAP_TIMER, timeString );
+      //eventData = generateEventData( Process, ProcOpEnd, timeString,
+                                 //programCounter, &pcbArray[scheduledProcess] );
+      //eventLogger( eventData, configDataPtr, listCurrentPtr );
    }
    
    //clean exit of operation runner, ie no segfaults.
@@ -513,17 +598,19 @@ Notes: none
 */
 void* threadRunTimer( void* threadInput )
 {
-   printf("THREAD CREATED");
-   
    //ensure we grab our sent integer pointer.
    int timeToWaitMs = (int) (((ThreadInput*)threadInput) -> timeToWait);
    int processId = (int) (((ThreadInput*)threadInput) -> pId);
    
+   printf("\n\nTHREAD::   :::TIME TO WAIT BEFORE : %d", timeToWaitMs);
+   
    //deference the pointer and send off the run timer
    runTimer( timeToWaitMs );
    
-   printf("THREAD ENDED, add to interrupt queue");
-   interruptQueue(PUSH, processId, -1);
+   printf("\n\nTHREAD::   :::TIME TO WAIT AFTER : %d", timeToWaitMs);
+   
+   printf("\n\nTHREAD ENDED, add to interrupt queue");
+   interruptQueue(ENQUEUE, processId, -1);
    
    //free our allocated space
    free(threadInput);
@@ -532,39 +619,38 @@ void* threadRunTimer( void* threadInput )
 }
 
 /*
-Function name: interruptQueue
+Function name: threadManager
 Algorithm:     
 Precondition:  
 Postcondition: 
 Exceptions: none
 Notes: none
 */
-int interruptQueue(InterruptAction action, int pId, int processNum)
+pthread_t threadManager(ThreadAction action, ThreadInput* threadInput)
 {
-   //static data to persist across runtime, allows us not to have to pass ptrs.
-   static int* interruptQueue;
+   static pthread_t* threads;
    static int currentOffset;
-   static int processCount;
-   int toReturn = -1;
+   int maxCap = 100;
+   pthread_t toReturn;
+   
+   pthread_t newThread;
    
    //check our requested action againts our enumerator possible values
    switch( action )
    {
       //initialization of queue, allocat space and point to front of it
-      case INIT:
-         processCount = processNum;
-         interruptQueue = (int*) malloc( sizeof(int) * processCount );
+      case tINIT:
+         threads = (pthread_t*) malloc( sizeof(pthread_t) * maxCap );
          currentOffset = 0;
-         
-         //also set our first position value to -1 to signify empty
-         *(interruptQueue + currentOffset) = -1;  
          break;
       
       //pushing an element into our queue, place pId inside and move offset
-      case PUSH:
-         if( currentOffset < processCount )
-         {   
-            *(interruptQueue + currentOffset) = pId;
+      case tPUSH:
+         if( currentOffset < maxCap )
+         {  
+            pthread_create( &newThread, NULL, threadRunTimer, (void*) threadInput );
+            //pthread_detach(newThread);
+            *(threads + currentOffset) = newThread;
             currentOffset++;
          }
          else
@@ -574,17 +660,16 @@ int interruptQueue(InterruptAction action, int pId, int processNum)
          break;
       
       //popping an element off the queue
-      case POP:
+      case tPOP:
          //ensure we dont overshoot our allocated memory
-         if( currentOffset == processCount )
+         if( currentOffset == maxCap )
          {
             currentOffset--;
          }
-         printf("---CURRENTOFF/PCount: %d .. %d ", currentOffset, processCount);
-         if( currentOffset >= 0 && currentOffset < processCount )
+
+         if( currentOffset >= 0 && currentOffset < maxCap )
          {  
-            toReturn = *(interruptQueue + currentOffset);
-            *(interruptQueue + currentOffset) = -1;
+            toReturn = *(threads + currentOffset);
             
             //check that we arent at left end of queue, if not then decrement.
             if( currentOffset != 0 )
@@ -600,13 +685,13 @@ int interruptQueue(InterruptAction action, int pId, int processNum)
          break;
          
       //"Destruct" our intterupt array, free memory   
-      case DESTRUCT:
-         free( interruptQueue );
+      case tDESTRUCT:
+         free( threads );
          break;
          
-      case ISEMPTY:
+      case tISEMPTY:
          //if we are at beginning and its pId is -1, we are empty
-         if( currentOffset == 0 && *(interruptQueue + currentOffset) == -1)
+         if( currentOffset == 0 && *(threads + currentOffset))
          {
             //return that we ARE empty
             return 1;
@@ -616,6 +701,108 @@ int interruptQueue(InterruptAction action, int pId, int processNum)
             //return that we are NOT empty
             return 0;
          }
+         break;
+   }
+   
+   //safe exit
+   return newThread;
+}
+
+/*
+Function name: interruptQueue
+Algorithm:     
+Precondition:  
+Postcondition: 
+Exceptions: none
+Notes: none
+*/
+int interruptQueue(InterruptAction action, int pId, int processNum)
+{
+   //static data to persist across runtime, allows us not to have to pass ptrs.
+   static int* queue;
+   static int size, headOffset, rearOffset, maxCap;
+   int toReturn = -1;
+   
+   //check our requested action againts our enumerator possible values
+   switch( action )
+   {
+      //initialization of queue, allocat space and point to front of it
+      case INIT:
+         maxCap = processNum;
+         queue = (int*) malloc( sizeof(int) * maxCap );
+         headOffset = 0;
+         size = 0;
+         rearOffset = maxCap - 1;
+         break;
+      
+      //adding an element into our queue, place pId inside and move offset
+      case ENQUEUE:
+         if( interruptQueue( ISFULL, 0, 0 ) )
+         {
+            return -1;
+         }
+         else
+         {
+            rearOffset = (rearOffset + 1) % maxCap; 
+            *(queue + rearOffset) = pId;
+            size++;
+         }
+         break;
+      
+      //removing an element off the queue
+      case DEQUEUE:
+         if( interruptQueue( ISEMPTY, 0, 0 ) )
+         {
+            return -1;
+         }
+         else
+         {
+            toReturn = *(queue + headOffset);
+            headOffset = (headOffset + 1) % maxCap;
+            size--;
+            
+            return toReturn;
+         }
+         break;
+         break;
+      
+      //return element at the headOffset
+      case HEAD:
+         if( interruptQueue( ISEMPTY, 0, 0 ))
+         {
+            return -1;
+         }
+         else
+         {
+            return *(queue + headOffset);
+         }
+         break;
+      
+      //return element at the rearOffset
+      case REAR:
+         if( interruptQueue( ISEMPTY, 0, 0 ))
+         {
+            return -1;
+         }
+         else
+         {
+            return *(queue + rearOffset);
+         }
+         break;
+         
+      //"Destruct" our intterupt array, free memory   
+      case DESTRUCT:
+         free( queue );
+         break;
+      
+      //returns true for size 0 and false otherwise
+      case ISEMPTY:
+         return ( size == 0 );
+         break;
+      
+      //return true for size == maxCap, false otherwise
+      case ISFULL:
+         return ( size == maxCap );
          break;
    }
    
