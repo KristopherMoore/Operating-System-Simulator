@@ -171,7 +171,7 @@ int simulationRunner(ConfigDataType* configDataPtr, OpCodeType* mdData)
             accessTimer( LAP_TIMER, timeString );
             eventData = generateEventData( OS, SystemIdle, timeString, NULL, 
                                                                         NULL);
-            eventLogger( eventData, configDataPtr, listCurrentPtr );
+            //eventLogger( eventData, configDataPtr, listCurrentPtr );
             idleFlag = True;
          }
       }
